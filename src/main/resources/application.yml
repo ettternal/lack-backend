@@ -2,7 +2,7 @@ spring:
   profiles:
     active: dev
   application:
-    name: Lack-backend
+    name: lack-backend
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
