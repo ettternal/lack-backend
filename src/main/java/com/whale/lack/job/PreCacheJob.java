@@ -2,7 +2,7 @@ package com.whale.lack.job;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.whale.lack.mapper.LackMapper;
+import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
 import com.whale.lack.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class PreCacheJob {
     private UserService userService;
 
     @Resource
-    public LackMapper userMapper;
+    public UserMapper userMapper;
 
     //重点用户
     private List<Long> mainUserList = Arrays.asList(1L);

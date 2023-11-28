@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # lack-伙伴匹配系统
 
 
@@ -9,12 +8,7 @@
 如图：
 
 
-
 伙伴匹配（找搭子）系统，完成了这个项目的完整前端和后端！从产生想法、到需求分析、到技术选型、系统设计、项目初始化、编码实现、测试、再到最后的部署上线，每一个环节都从理论到实践、每一个细节都不放过！
-
-
-
-
 
 麻雀虽小五脏俱全，完成了这个项目的完整前端和后端！从产生想法、到需求分析、到技术选型、系统设计、项目初始化、编码实现、测试、再到最后的部署上线，每一个环节都从理论到实践、每一个细节都不放过！
 
@@ -25,25 +19,21 @@
 
 ### 前端
 
-主要运用阿里 Ant Design 生态：
-
-- HTML + CSS + JavaScript 三件套
-- React 开发框架
-- Ant Design Pro 项目模板
-- Ant Design 端组件库
-- Umi 开发框架
-- Umi Request 请求库
+1. Vue3开发框架（提高页面整体开发效率）
+2. Vant UI（基于Vue的移动端组件库）（React版Zent）
+3. Vite2打包工具
+4. Nginx来单机部署
 
 
 
 ### 后端
 
-- Java 编程语言
-- Spring + SpringMVC + SpringBoot 框架
-- MyBatis + MyBatis Plus 数据访问框架
-- MySQL 数据库
-- jUnit 单元测试库
-
+1. Java 编程语言
+2. Spring + SpringMVC + SpringBoot 框架
+3. MyBatis + MyBatis Plus 数据访问框架
+4. MySQL数据库
+5. Redis缓存（缓存预热，分布式定时任务，分布式锁）
+6. Swagger+knife4j接口文档
 
 
 ### 部署

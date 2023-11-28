@@ -1,6 +1,6 @@
 package com.whale.lack.once;
 
-import com.whale.lack.mapper.LackMapper;
+import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
@@ -11,7 +11,7 @@ import javax.annotation.Resource;
 public class InsertUsers {
 
     @Resource
-    private LackMapper userMapper;
+    private UserMapper userMapper;
 
     /**
      * 批量插入用户

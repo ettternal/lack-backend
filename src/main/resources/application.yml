@@ -6,7 +6,7 @@ spring:
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/uni
+    url: jdbc:mysql://localhost:3306/lack
     username: root
     password: 725616
   # session 失效时间(分钟86400两个月)

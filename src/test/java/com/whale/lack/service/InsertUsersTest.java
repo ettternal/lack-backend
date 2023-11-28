@@ -1,6 +1,6 @@
 package com.whale.lack.service;
 
-import com.whale.lack.mapper.LackMapper;
+import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 public class InsertUsersTest {
 
     @Resource
-    private LackMapper userMapper;
+    private UserMapper userMapper;
 
     /**
      * 批量插入用户
@@ -25,9 +25,9 @@ public class InsertUsersTest {
         final int INSERT_NUM = 1000;
         for (int i = 0; i < INSERT_NUM; i++) {
             User user = new User();
-            user.setUsername("假用户");
-            user.setUserAccount("假二哈");
-            user.setAvatarUrl("https://tse4-mm.cn.bing.net/th/id/OIP-C.DMY4H6Xibxdrzf-hkElvZgHaDu?w=326&h=176&c=7&r=0&o=5&pid=1.7");
+            user.setUsername("二哈呀");
+            user.setUserAccount("FakeErha");
+            user.setAvatarUrl("https://ts1.cn.mm.bing.net/th?id=OIP-C.J7odbcNKBU93chEgiP0hzgHaJS&w=223&h=280&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2");
             user.setGender(0);
             user.setUserPassword("12345678");
             user.setPhone("13987496799");

@@ -1,7 +1,7 @@
 package com.whale.lack.service;
 
 
-import com.whale.lack.mapper.LackMapper;
+import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
@@ -23,12 +23,12 @@ import java.util.concurrent.*;
 @SpringBootTest
 public class LackServiceTest {
     @Resource
-    private LackMapper userMapper;
+    private UserMapper userMapper;
 
     @Resource
     private UserService userService;
 
-    public LackServiceTest(LackMapper userMapper) {
+    public LackServiceTest(UserMapper userMapper) {
         this.userMapper = userMapper;
     }
 
@@ -142,7 +142,7 @@ public class LackServiceTest {
         List<User> userList = new ArrayList<>();
         for (int i = 0; i < INSERT_NUM; i++) {
             User user = new User();
-            user.setUsername("假二哈呀");
+            user.setUsername("二哈呀");
             user.setUserAccount("FakeErha");
             user.setAvatarUrl("https://tse4-mm.cn.bing.net/th/id/OIP-C.DMY4H6Xibxdrzf-hkElvZgHaDu?w=326&h=176&c=7&r=0&o=5&pid=1.7");
             user.setGender(0);

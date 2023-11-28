@@ -37,7 +37,7 @@ public class SwaggerConfig {
      */
 
     private ApiInfo apiInfo() {
-        return new ApiInfoBuilder().title("用户中心")
+        return new ApiInfoBuilder().title("lack-伙伴匹配")
                 .contact(new Contact("whale", "www.xxx.com", "xxx@qq.com"))
                 .description("这是用Swagger动态生成的用户中心接口文档")
                 .termsOfServiceUrl("NO terms of service")

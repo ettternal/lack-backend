@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.whale.lack.mapper.LackMapper;
+import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
 import com.whale.lack.service.UserService;
 import com.whale.lack.common.ErrorCode;
@@ -33,11 +33,11 @@ import static com.whale.lack.contant.UserConstant.USER_LOGIN_STATE;
  */
 @Service
 @Slf4j
-public class UserServiceImpl extends ServiceImpl<LackMapper, User>
+public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
     @Resource
-    private LackMapper userMapper;
+    private UserMapper userMapper;
 
 
 
