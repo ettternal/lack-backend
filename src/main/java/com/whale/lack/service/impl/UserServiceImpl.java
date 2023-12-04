@@ -6,10 +6,13 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
+import com.whale.lack.model.vo.UserVO;
 import com.whale.lack.service.UserService;
 import com.whale.lack.common.ErrorCode;
 import com.whale.lack.contant.UserConstant;
 import com.whale.lack.exception.BusinessException;
+import com.whale.lack.utils.AlgorithmUtils;
+import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -18,15 +21,15 @@ import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.whale.lack.contant.UserConstant.USER_LOGIN_STATE;
+import static java.lang.Character.getType;
+import static net.sf.jsqlparser.util.validation.metadata.NamedObject.user;
 
 /**
  * 用户服务实现类
@@ -38,7 +41,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private UserMapper userMapper;
-
 
 
     /**
@@ -197,7 +199,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * 根据用户标签搜索用户(内存过滤版)
      */
     @Override
-    public List<User> searchUsersByTags(List<String> tagNameList){
+    public List<User> searchUsersByTags(List<String> tagNameList) {
         //1. 先查询所有用户
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         List<User> userList = userMapper.selectList(queryWrapper);
@@ -205,12 +207,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //2. 在内存中判断是否包含要求的标签
         return userList.stream().filter(user -> {
             String tagStr = user.getTags();
-            Set<String> temptagNameSet = gson.fromJson(tagStr,new TypeToken<Set<String>>(){}.getType());
+            Set<String> temptagNameSet = gson.fromJson(tagStr, new TypeToken<Set<String>>() {
+            }.getType());
             temptagNameSet = Optional.ofNullable(temptagNameSet).orElse(new HashSet<>());
             //反序列化成对象
             //得到一个对象的写法:gson.toJson(tempTagNameList);
-            for(String tagName:tagNameList){
-                if(!temptagNameSet.contains(tagName)){
+            for (String tagName : tagNameList) {
+                if (!temptagNameSet.contains(tagName)) {
                     return false;
                 }
             }
@@ -222,24 +225,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 判断权限
+     *
      * @param user
      * @return
      */
     @Override
-    public int updateUser(User user,User loginUser) {
+    public int updateUser(User user, User loginUser) {
         //查询当前要更新的用户
         long userId = user.getId();
-        if(userId <= 0){
+        if (userId <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //todo 补充更多校验
         //判断权限，仅管理员和自己可以修改
         //如果不是管理员只允许更新自己用户
-        if(!isAdmin(loginUser) && userId != loginUser.getId()){
+        if (!isAdmin(loginUser) && userId != loginUser.getId()) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         User oldUser = userMapper.selectById(userId);
-        if(oldUser == null){
+        if (oldUser == null) {
             throw new BusinessException(ErrorCode.NULL_ERROR);
         }
         return userMapper.updateById(user);
@@ -248,14 +252,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        if(request == null){
+        if (request == null) {
             return null;
         }
         Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        if(userObj == null){
+        if (userObj == null) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
-        return (User)userObj;
+        return (User) userObj;
     }
 
 
@@ -266,17 +270,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return
      */
     @Deprecated //过时版
-    private List<User> searchUsersBySQL(List<String> tagNameList){
+    private List<User> searchUsersBySQL(List<String> tagNameList) {
         //判断输入的标签是否为空，如果是那就抛出输入错误的异常
-        if(CollectionUtils.isEmpty(tagNameList)){
+        if (CollectionUtils.isEmpty(tagNameList)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //创建查询
         QueryWrapper<User> querryWrapper = new QueryWrapper<>();
         //拼接 and 查询
         //like '%java% and '%python%'
-        for (String tagName:tagNameList){
-            querryWrapper=querryWrapper.like("tags",tagName);
+        for (String tagName : tagNameList) {
+            querryWrapper = querryWrapper.like("tags", tagName);
         }
         List<User> userList = userMapper.selectList(querryWrapper);
         //用户脱敏
@@ -315,6 +319,103 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return loginUser != null && loginUser.getUserRole() == UserConstant.ADMIN_ROLE;
     }
 
+    /**
+     * 精准获取推荐用户
+     *
+     * @param num
+     * @param loginUser
+     * @return
+     */
+    @Override
+    public List<User> matchUsers(long num, User loginUser) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id", "tags");//我们只查id和tags字段
+        queryWrapper.isNotNull("tags");
+        //获取标签不为空的所有用户的列表
+        List<User> userList = this.list(queryWrapper);
+        //获取当前登录用户的标签
+        String tags = loginUser.getTags();
+        //tags是json格式，现在转为java对象
+        Gson gson = new Gson();
+        List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
+        }.getType());
+        //记录用户的下标和相似度
+        List<Pair<User, Long>> list = new ArrayList<>();
+        //依次计算所有用户和当前用户的相似度
+        for (int i = 0; i < userList.size(); i++) {
+            User user = userList.get(i);
+            //获取列表用户的标签
+            String userTags = user.getTags();
+            //用户标签为空和用户为登录用户就接着（剔除登录用户）
+            if (StringUtils.isBlank(userTags) || user.getId() == loginUser.getId()) {//用户没有标签或者遍历到自己，就遍历下一个用户
+                continue;
+            }
+            //将用户的标签转为java对象
+            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
+            }.getType());
+            //两两比较,获取相识度，相识度月底，就越匹配
+            long distance = AlgorithmUtils.minDistance(tagList, userTagList);
+            //记录
+            list.add(new Pair<>(user, distance));
+        }
+            // 按编辑距离由小到大排序,升序，编辑距离越短，匹配度越高，即相识度越高
+        List<Pair<User, Long>> topUserPairList = list.stream()
+                .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
+                .limit(num)
+                .collect(Collectors.toList());
+            //从topUserPairList取出用户,这里的用户只有id和tags信息,这里已经根据相似度排好序了
+        List<Long> userIdList = topUserPairList.stream().map(pair ->
+                pair.getKey().getId()).collect(Collectors.toList());
+            //获取用户的所有信息，并进行脱敏，得到的是未排序的用户
+            // 1, 3, 2
+            // User1、User2、User3
+            // 1 => User1, 2 => User2, 3 => User3
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.in("id", userIdList);//使用in了之后就又打乱了顺序
+        Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper).
+                stream().
+                map(user -> getSafetyUser(user)).
+                collect(Collectors.groupingBy(User::getId));
+        //重新排序
+        List<User> finalUserList = new ArrayList<>();
+        for (Long userId : userIdList) {
+            finalUserList.add(userIdUserListMap.get(userId).get(0));
+        }
+        return finalUserList;
+    }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

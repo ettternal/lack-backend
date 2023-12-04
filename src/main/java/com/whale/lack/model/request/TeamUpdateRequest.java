@@ -5,11 +5,13 @@ import java.io.Serializable;
 import java.util.Date;
 
 
-
-
 @Data
-public class TeamAddRequest implements Serializable {
+public class TeamUpdateRequest implements Serializable {
     private static final long serialVersionUID = 941141758449488001L;
+    /**
+     * id
+     */
+    private Long id;
     /**
      * 队伍名称
      */

@@ -1,7 +1,10 @@
 package com.whale.lack.service;
 
+import com.whale.lack.common.BaseResponse;
 import com.whale.lack.model.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.whale.lack.model.vo.UserVO;
+import net.sf.jsqlparser.util.validation.metadata.NamedObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -84,4 +87,12 @@ public interface UserService extends IService<User> {
      * @return
      */
     boolean isAdmin(User loginUser);
+
+    /**
+     * 最佳伙伴匹配
+     * @param num
+     * @param loginUser
+     * @return
+     */
+    List<User> matchUsers(long num,User loginUser);
 }

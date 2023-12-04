@@ -1,25 +1,33 @@
 package com.whale.lack.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.Query;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.whale.lack.model.domain.Team;
 import com.whale.lack.model.domain.User;
+import com.whale.lack.model.domain.UserTeam;
 import com.whale.lack.model.request.TeamAddRequest;
+import com.whale.lack.model.request.TeamJoinRequest;
+import com.whale.lack.model.request.TeamQuitRequest;
+import com.whale.lack.model.request.TeamUpdateRequest;
+import com.whale.lack.model.vo.TeamUserVO;
 import com.whale.lack.service.TeamService;
 import com.whale.lack.service.UserService;
 import com.whale.lack.common.BaseResponse;
 import com.whale.lack.common.ErrorCode;
 import com.whale.lack.common.ResultUtils;
 import com.whale.lack.exception.BusinessException;
+import com.whale.lack.service.UserTeamService;
 import com.whale.lack.service.dto.TeamQuery;
+import com.whale.lack.service.impl.UserTeamServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -63,11 +71,12 @@ public class TeamController {
      * @return
      */
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteTeam(@RequestBody long id){//接收前端传来队伍的信息
+    public BaseResponse<Boolean> deleteTeam(@RequestBody long id,HttpServletRequest request){//接收前端传来队伍的信息
         if(id <= 0){
             throw new  BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = teamService.removeById(id);//teamService继承自Iservices的接口,底层实现了serviceImpl
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.deleteTeam(id,loginUser);//teamService继承自Iservices的接口,底层实现了serviceImpl
         //需要返回新生成数据的id,使用mybatis的组件回写
         if(!result){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"删除失败");
@@ -79,21 +88,21 @@ public class TeamController {
     /**
      * 改动队伍
      *
-     * @param team
+     * @param teamUpdateRequest
      * @return
      */
     @PostMapping("/update")
-    public BaseResponse<Boolean> updateTeam(@RequestBody Team team){//接收前端传来队伍的信息
-        if(team == null){
+    public BaseResponse<Boolean> updateTeam(@RequestBody TeamUpdateRequest teamUpdateRequest,HttpServletRequest request){//接收前端传来队伍的信息
+        if(teamUpdateRequest == null){
             throw new  BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        boolean result = teamService.updateById(team);//teamService继承自Iservices的接口,底层实现了serviceImpl
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.updateTeam(teamUpdateRequest,loginUser);//teamService继承自Iservices的接口,底层实现了serviceImpl
         //需要返回新生成数据的id,使用mybatis的组件回写
         if(!result){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"更新失败");
         }
         return ResultUtils.success(true);
-
 
     }
 
@@ -118,6 +127,25 @@ public class TeamController {
 
     }
 
+//    /**
+//     * 查询组队列表
+//     * @param teamQuery
+//     * @return
+//     */
+//    @GetMapping("/list")
+//    //新建teamQuery业务请求参数封装类作为，原因：1.请求参数和实体类不一样；2.有些参数用不到；3.有些字段要隐藏不返回到前端
+//    public BaseResponse<List<Team>> listTeams(TeamQuery teamQuery){
+//        if (teamQuery == null){
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+//        }
+//        Team team = new Team();
+//        BeanUtils.copyProperties(team,teamQuery);
+//        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
+//        List<Team> teamList = teamService.list(queryWrapper);
+//        return ResultUtils.success(teamList);
+//    }
+
+
     /**
      * 查询组队列表
      * @param teamQuery
@@ -125,19 +153,17 @@ public class TeamController {
      */
     @GetMapping("/list")
     //新建teamQuery业务请求参数封装类作为，原因：1.请求参数和实体类不一样；2.有些参数用不到；3.有些字段要隐藏不返回到前端
-    public BaseResponse<List<Team>> listTeams(TeamQuery teamQuery){
+    public BaseResponse<List<TeamUserVO>> listTeams(TeamQuery teamQuery, HttpServletRequest request){
         if (teamQuery == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Team team = new Team();
-        BeanUtils.copyProperties(team,teamQuery);
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
-        List<Team> teamList = teamService.list(queryWrapper);
+        boolean isAdmin = userService.isAdmin(request);
+        List<TeamUserVO> teamList = teamService.listTeams(teamQuery,isAdmin);
         return ResultUtils.success(teamList);
     }
 
     /**
-     * 查询组队列表
+     * 分页查询组队列表
      * @param teamQuery
      * @return
      */
@@ -154,7 +180,78 @@ public class TeamController {
         return ResultUtils.success(Resultpage);
 
     }
+    /**
+     * 获取我创建的队伍
+     * @param teamQuery
+     * @param request
+     * @return
+     */
+    @GetMapping("/list/my/create")
+    public BaseResponse<List<TeamUserVO>> listMyCreateTeams(TeamQuery
+                                                                    teamQuery,HttpServletRequest request){
+        if (teamQuery == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        teamQuery.setUserId(loginUser.getId());
+        List<TeamUserVO> teamList = teamService.listTeams(teamQuery,true);
+        return ResultUtils.success(teamList);
+    }
+    /**
+     * 获取我加入的队伍
+     * @param teamQuery
+     * @param request
+     * @return
+     */
+    @GetMapping("/list/my/join")
+    public BaseResponse<List<TeamUserVO>> listMyJoinTeams(TeamQuery
+                                                                  teamQuery,HttpServletRequest request){
+        if (teamQuery == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+//当前登录用户
+        User loginUser = userService.getLoginUser(request);
+//获取当前登录用户加入队伍的列表，严谨点，进行过滤重复的队伍
+        QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userId",loginUser.getId());
+        UserTeamService userTeamService = new UserTeamServiceImpl();
+        List<UserTeam> userTeamList = userTeamService.list(queryWrapper);
+        Map<Long, List<UserTeam>> listMap = userTeamList.stream().
+                collect(Collectors.groupingBy(UserTeam::getTeamId));
+        ArrayList<Long> idList = new ArrayList<>(listMap.keySet());
+        teamQuery.setIdList(idList);
+        List<TeamUserVO> teamList = teamService.listTeams(teamQuery,true);
+        return ResultUtils.success(teamList);
+    }
 
+    /**
+     * 加入队伍
+     * @param teamJoinRequest 加入请求
+     * @param request 请求
+     * @return
+     */
+    @PostMapping("/join")
+    public BaseResponse<Boolean> joinTeam(TeamJoinRequest teamJoinRequest, HttpServletRequest request){
+        if(teamJoinRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.joinTeam(teamJoinRequest,loginUser);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 退出队伍
+     */
+    @PostMapping("/quit")
+    private BaseResponse<Boolean> quitTeam(TeamQuitRequest teamQuitRequest, HttpServletRequest request){
+        if(teamQuitRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.quitTeam(teamQuitRequest,loginUser);
+        return ResultUtils.success(result);
+    }
 
 }
 

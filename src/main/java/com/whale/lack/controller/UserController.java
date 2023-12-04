@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.whale.lack.model.domain.User;
 import com.whale.lack.model.request.UserLoginRequest;
 import com.whale.lack.model.request.UserRegisterRequest;
+import com.whale.lack.model.vo.UserVO;
 import com.whale.lack.service.UserService;
 import com.whale.lack.common.BaseResponse;
 import com.whale.lack.common.ErrorCode;
@@ -12,6 +13,7 @@ import com.whale.lack.common.ResultUtils;
 import com.whale.lack.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.whale.lack.contant.UserConstant.USER_LOGIN_STATE;
+import static net.sf.jsqlparser.util.validation.metadata.NamedObject.user;
 
 /**
  * 用户接口
@@ -223,7 +226,18 @@ public class UserController {
         //3. 触发更新
     }
 
-
-
-
+    /**
+     * 获取最匹配用户
+     * @param num
+     * @param request
+     * @return
+     */
+    @GetMapping("/match")
+    public BaseResponse<List<User>> matchUsers(long num, HttpServletRequest request) {
+        if(num <= 0 || num > 20){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = userService.getLoginUser(request);
+        return ResultUtils.success(userService.matchUsers(num,user));
+    }
 }

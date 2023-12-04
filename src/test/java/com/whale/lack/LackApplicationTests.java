@@ -2,12 +2,16 @@ package com.whale.lack;
 
 import com.whale.lack.mapper.UserMapper;
 import com.whale.lack.model.domain.User;
+import com.whale.lack.utils.AlgorithmUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StopWatch;
 
+import java.lang.reflect.Array;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 启动类测试
@@ -57,6 +61,26 @@ class LackApplicationTests {
     void contextLoads() {
 
     }
+    @Test
+    void test(){
+        String str1 = "i am a student";
+        String str2 = "i am a college student";
 
+        int score1 = AlgorithmUtils.minDistance(str1, str2);
+        System.out.println(score1);
+    }
+    @Test
+    void testCompareTags(){
+        List<String> list = Arrays.asList("java", "大一", "男");
+        List<String> list1 = Arrays.asList("java", "大二", "女");
+        List<String> list2 = Arrays.asList("python", "大二", "女");
+
+
+        int score1 = AlgorithmUtils.minDistance(list, list1);
+        int score2 = AlgorithmUtils.minDistance(list1, list2);
+
+        System.out.println(score1);
+        System.out.println(score2);
+    }
 }
 
